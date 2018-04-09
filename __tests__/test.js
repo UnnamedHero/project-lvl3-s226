@@ -1,5 +1,4 @@
 import '../src';
 
 test('halt', () => {
-  // 
 });
