@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "webpack": "webpack",
-    "start": "webpack"
+    "start": "webpack",
+    "eslint": "eslint"
   },
   "repository": {
     "type": "git",
@@ -30,8 +31,7 @@
     "babel-jest": "^22.4.3",
     "babel-loader": "^7.1.4",
     "babel-preset-env": "^1.6.1",
-    "babel-preset-stage-0": "^6.24.1",
-    "bootstrap": "^4.0.0",
+    "babel-preset-stage-0": "^6.24.1",    
     "css-loader": "^0.28.11",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
@@ -45,5 +45,7 @@
     "webpack-cli": "^2.0.14",
     "webpack-serve": "^0.3.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "bootstrap": "^4.0.0"
+  }
 }
