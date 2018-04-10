@@ -4,18 +4,20 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <title>EEM Hexlet RSS reader</title>
   </head>
     <body>
       <div class="jumbotron">
-        <form>
-            <div class="form-group">
-              <label for="rssFeedUrl">RSS feed URL</label>
-              <input type="text" class="form-control" id="rssFeedUrl" placeholder="feed URL">
+        <form id="feedAddForm" class="needs-validation">
+            <div class="form-group">              
+              <label for="feedUrl">RSS feed URL</label>              
+              <input type="text" class="form-control" id="feedUrl" placeholder="feed URL" required>
+              <div class="invalid-feedback"></div>
             </div>
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
+      </div>
+      <div id="feeds-list">        
       </div>
     </body>
 </html>

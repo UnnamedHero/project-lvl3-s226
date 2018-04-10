@@ -1,6 +1,10 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
+  entry: {
+    app: './src/index.js',
+    css: './src/app.css.js',
+  },
   mode: process.env.NODE_ENV,
   module: {
     rules: [
@@ -22,4 +26,7 @@ module.exports = {
       template: 'index.html',
     }),
   ],
+  devServer: {
+    contentBase: './dist',
+  },
 };
