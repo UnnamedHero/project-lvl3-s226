@@ -2,8 +2,14 @@ import 'bootstrap';
 import { isURL } from 'validator';
 import FeedItem from './feedItem';
 
-const toggleValid = (element, state) => {
-  const { condition, message } = state;
+const state = {
+  urlState: { condition: 'invalid', message: 'empty url' },
+  feeds: new Set(),
+};
+
+const toggleValid = (element, urlState) => {
+  const { condition, message } = urlState;
+  state.urlState = urlState;
   if (condition === 'valid') {
     element.classList.remove('is-invalid');
     element.classList.add('is-valid');
@@ -15,11 +21,6 @@ const toggleValid = (element, state) => {
   }
 };
 
-const state = {
-  feeds: new Set(),
-};
-
-
 window.addEventListener('load', () => {
   const form = document.getElementById('feedAddForm');
   const feedInput = document.getElementById('feedUrl');
@@ -28,6 +29,8 @@ window.addEventListener('load', () => {
     const { value } = e.target;
     const normalizedValue = value.trim().toLowerCase();
     if (!isURL(normalizedValue)) {
+      state.urlState.isValid = false;
+      state.urlState.message = 'Invalid Feed URL';
       toggleValid(feedInput, { condition: 'invalid', message: 'Invalid Feed URL' });
       return;
     }
@@ -42,7 +45,7 @@ window.addEventListener('load', () => {
     state.feeds.add(url);
     e.preventDefault();
     feedInput.value = '';
-    if (feedInput.classList.contains('is-valid')) {
+    if (state.urlState.condition === 'valid') {
       const fi = new FeedItem(url, feedsParent);
       fi.init();
     }
