@@ -3,3 +3,4 @@ parser: babel-eslint
 env: 
   node: true
   jest: true
+  browser: true
