@@ -16,3 +16,7 @@ webpack:
 	
 test:
 	npm test
+
+lt:
+	make lint
+	make test
