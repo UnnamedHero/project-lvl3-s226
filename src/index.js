@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const url = feedInput.value;
     feedInput.value = '';
-    if (!state.urlState.condition === 'valid') {
+    if (state.urlState.condition !== 'valid') {
       return;
     }
     state.feeds.add(url);
