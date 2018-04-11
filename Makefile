@@ -12,6 +12,7 @@ publish: webpack
 	surge ./dist --domain eem-hexlet-rssreader.surge.sh	
 
 webpack:
+	rm -rf ./dist
 	npm run webpack
 	
 test:
