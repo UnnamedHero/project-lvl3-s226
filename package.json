@@ -1,6 +1,6 @@
 {
   "name": "eem-hexlet-rssreader",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Hexlet education project #3. RSS Reader.",
   "main": "index.js",
   "scripts": {
