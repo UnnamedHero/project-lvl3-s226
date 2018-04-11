@@ -1,3 +1,5 @@
+const maxId = 1e5;
+
 const makeFeedItemNode = (itemObj, targetId) => {
   const elem = document.createElement('li');
   elem.classList.add('list-group-item', 'd-flex');
@@ -46,7 +48,7 @@ export default (parent, feedObj) => {
   feedTitleNode.textContent = feedObj.title;
   feedDescNode.textContent = feedObj.description;
   feedObj.items.forEach((item) => {
-    const elemId = `target${Math.floor(Math.random() * 1e5)}"`;
+    const elemId = `target${Math.floor(Math.random() * maxId)}"`;
     const elem = makeFeedItemNode(item, elemId);
     if (item.description.length > 0) {
       const elemModal = makeFeedItemModal(item, elemId);
