@@ -1,53 +1,108 @@
 import 'bootstrap';
-import { isURL } from 'validator';
-import FeedItem from './feedItem';
+import axios from 'axios';
+import { isURL, isFloat } from 'validator';
+import appendFeed from './feedItem';
+import { getAlertError, getAlertInfo } from './alertNode';
 
 const state = {
   urlState: { condition: 'invalid', message: 'empty url' },
   feeds: new Set(),
 };
 
-const toggleValid = (element, urlState) => {
-  const { condition, message } = urlState;
-  state.urlState = urlState;
+const toggleInputState = (input) => {
+  const { condition, message } = state.urlState;
   if (condition === 'valid') {
-    element.classList.remove('is-invalid');
-    element.classList.add('is-valid');
+    input.classList.remove('is-invalid');
+    input.classList.add('is-valid');
   } else {
-    element.classList.add('is-invalid');
-    element.classList.remove('is-valid');
-    const divElem = element.parentElement.querySelector('div .invalid-feedback');
+    input.classList.add('is-invalid');
+    input.classList.remove('is-valid');
+    const divElem = input.parentElement.querySelector('div .invalid-feedback');
     divElem.textContent = message;
   }
 };
 
-window.addEventListener('load', () => {
-  const form = document.getElementById('feedAddForm');
-  const feedInput = document.getElementById('feedUrl');
-  const feedsParent = document.getElementById('feeds-list');
+const getNodeTagValue = (node, tag) => node.getElementsByTagName(tag)[0].childNodes[0].nodeValue;
+const getNodeLink = node => getNodeTagValue(node, 'link');
+const getNodeTitle = node => getNodeTagValue(node, 'title');
+const getNodeDesc = node => getNodeTagValue(node, 'description');
+const getParserError = node => getNodeTagValue(node, 'parsererror');
+
+const validateRssXml = (xml) => {
+  const errorNode = xml.getElementsByTagName('parsererror')[0];
+  if (errorNode) {
+    return { error: getParserError(xml) };
+  }
+  const rssNode = xml.getElementsByTagName('rss')[0];
+  if (!rssNode) {
+    return { error: 'Not a rss feed' };
+  }
+  const rssVersion = rssNode.getAttribute('version');
+  if (!isFloat(rssVersion, { min: 0.90, max: 2.01 })) {
+    return { error: `bad RSS version ${rssVersion}` };
+  }
+  return {};
+};
+
+const makeFeedObject = (xml) => {
+  const feedItems = [...xml.getElementsByTagName('item')] || [];
+  return {
+    title: getNodeTitle(xml) || '',
+    description: getNodeDesc(xml) || '',
+    items: feedItems.map(item => ({
+      title: getNodeTitle(item),
+      link: getNodeLink(item),
+    })),
+  };
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('feed-add-form');
+  const feedInput = document.getElementById('feed-url');
   feedInput.addEventListener('input', (e) => {
     const { value } = e.target;
-    const normalizedValue = value.trim().toLowerCase();
-    if (!isURL(normalizedValue)) {
-      state.urlState.isValid = false;
-      state.urlState.message = 'Invalid Feed URL';
-      toggleValid(feedInput, { condition: 'invalid', message: 'Invalid Feed URL' });
+    const normalizedUrl = value.trim().toLowerCase();
+    if (!isURL(normalizedUrl, { require_protocol: true })) {
+      state.urlState = { condition: 'invalid', message: 'Invalid Feed URL' };
+      toggleInputState(feedInput);
       return;
     }
-    if (state.feeds.has(normalizedValue)) {
-      toggleValid(feedInput, { condition: 'invalid', message: 'Feed URL already exists' });
+    if (state.feeds.has(normalizedUrl)) {
+      state.urlState = { condition: 'invalid', message: 'Feed URL already exists' };
+      toggleInputState(feedInput);
       return;
     }
-    toggleValid(feedInput, { condition: 'valid' });
+    state.urlState = { condition: 'valid' };
+    toggleInputState(feedInput);
   });
+
   form.addEventListener('submit', (e) => {
-    const url = feedInput.value;
-    state.feeds.add(url);
     e.preventDefault();
+    const url = feedInput.value;
     feedInput.value = '';
-    if (state.urlState.condition === 'valid') {
-      const fi = new FeedItem(url, feedsParent);
-      fi.init();
+    if (!state.urlState.condition === 'valid') {
+      return;
     }
+    state.feeds.add(url);
+    const alertNode = document.getElementById('feed-url-alerts');
+    const infoNode = getAlertInfo(`Fetching '${url}'`);
+    alertNode.appendChild(infoNode);
+    axios.get(url)
+      .then((response) => {
+        infoNode.remove();
+        const dp = new DOMParser();
+        const feedXML = dp.parseFromString(response.data, 'application/xml');
+        const { error } = validateRssXml(feedXML);
+        if (error) {
+          throw new Error(`failed with xml from '${url}': ${error}`);
+        }
+        const feedObj = makeFeedObject(feedXML);
+        const feedsParent = document.getElementById('feeds-list');
+        appendFeed(feedsParent, feedObj);
+      })
+      .catch((error) => {
+        infoNode.remove();
+        alertNode.appendChild(getAlertError(error));
+      });
   });
 });
