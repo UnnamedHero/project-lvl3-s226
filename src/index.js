@@ -22,7 +22,11 @@ const toggleInputState = (input) => {
   }
 };
 
-const getNodeTagValue = (node, tag) => node.getElementsByTagName(tag)[0].childNodes[0].nodeValue;
+const getNodeTagValue = (node, tag) => {
+  const n = node.getElementsByTagName(tag)[0].childNodes;
+  return n.length === 0 ? '' : n[0].nodeValue;
+};
+
 const getNodeLink = node => getNodeTagValue(node, 'link');
 const getNodeTitle = node => getNodeTagValue(node, 'title');
 const getNodeDesc = node => getNodeTagValue(node, 'description');
@@ -45,13 +49,14 @@ const validateRssXml = (xml) => {
 };
 
 const makeFeedObject = (xml) => {
-  const feedItems = [...xml.getElementsByTagName('item')] || [];
+  const feedItems = [...xml.getElementsByTagName('item')];
   return {
-    title: getNodeTitle(xml) || '',
-    description: getNodeDesc(xml) || '',
+    title: getNodeTitle(xml),
+    description: getNodeDesc(xml),
     items: feedItems.map(item => ({
       title: getNodeTitle(item),
       link: getNodeLink(item),
+      description: getNodeDesc(item),
     })),
   };
 };
