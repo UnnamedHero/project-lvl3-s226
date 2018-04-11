@@ -2,7 +2,7 @@ import 'bootstrap';
 import axios from 'axios';
 import { isURL, isFloat } from 'validator';
 import appendFeed from './feedItem';
-import { getAlertError, getAlertInfo } from './alertNode';
+import { getAlertErrorNode, getAlertInfoNode } from './alertNode';
 
 const state = {
   urlState: { condition: 'invalid', message: 'empty url' },
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     state.feeds.add(url);
     const alertNode = document.getElementById('feed-url-alerts');
-    const infoNode = getAlertInfo(`Fetching '${url}'`);
+    const infoNode = getAlertInfoNode(`Fetching '${url}'`);
     alertNode.appendChild(infoNode);
     axios.get(url)
       .then((response) => {
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch((error) => {
         infoNode.remove();
-        alertNode.appendChild(getAlertError(`Failed on '${url}' with: ${error}`));
+        alertNode.appendChild(getAlertErrorNode(`Failed on '${url}' with: ${error}`));
       });
   });
 });

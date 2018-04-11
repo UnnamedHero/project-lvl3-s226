@@ -20,6 +20,6 @@ const makeNode = (type, text) => {
   return div;
 };
 
-export const getAlertError = text => makeNode('error', text);
+export const getAlertErrorNode = text => makeNode('error', text);
 
-export const getAlertInfo = text => makeNode('info', text);
+export const getAlertInfoNode = text => makeNode('info', text);
