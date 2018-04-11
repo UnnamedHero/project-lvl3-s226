@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const feedXML = dp.parseFromString(response.data, 'application/xml');
         const { error } = validateRssXml(feedXML);
         if (error) {
-          throw new Error(`failed with xml from '${url}': ${error}`);
+          throw new Error(error);
         }
         const feedObj = makeFeedObject(feedXML);
         const feedsParent = document.getElementById('feeds-list');
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch((error) => {
         infoNode.remove();
-        alertNode.appendChild(getAlertError(error));
+        alertNode.appendChild(getAlertError(`Failed on '${url}' with: ${error}`));
       });
   });
 });
