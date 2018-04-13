@@ -50,6 +50,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "bootstrap": "^4.0.0",
+    "lodash": "^4.17.5",
     "validator": "^9.4.1"
   }
 }
