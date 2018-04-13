@@ -2,7 +2,7 @@ import { isFloat } from 'validator';
 import { uniqueId } from 'lodash';
 
 const getNodeTagValue = (node, tag) => {
-  const n = node.getElementsByTagName(tag)[0].childNodes;
+  const n = node.getElementsByTagName(tag)[0].childNodes || '';
   return n.length === 0 ? '' : n[0].nodeValue;
 };
 

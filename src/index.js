@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { isURL } from 'validator';
 import { appendFeed, updateFeed } from './feedItem';
 import * as xmlUtils from './xmlUtils';
-import { replaceFeedById, updateFeedItems, appendNewFeed } from './stateUtils';
+import { replaceFeedById, updateFeedItems, appendNewFeed } from './feedUtils';
 import { getAlertErrorNode, getAlertInfoNode } from './alertNode';
 
 
@@ -18,7 +18,6 @@ const appState = {
 
 const renderNewFeed = (feed) => {
   const feedsParent = document.getElementById('feeds-list');
-  // const renderedItems = feed.items.map(item => ({ ...item, state: 'rendered' }));
   appendFeed(feedsParent, feed);
 };
 
@@ -36,6 +35,7 @@ const feedProperties = [
     feedUpdater: _.identity,
     stateUpdater: (newFeedObj, stateFeeds) => appendNewFeed(newFeedObj, stateFeeds),
     render: feed => renderNewFeed(feed),
+    getInfoNode: msg => getAlertInfoNode(msg),
   },
   {
     state: 'rendered',
@@ -44,6 +44,7 @@ const feedProperties = [
     stateUpdater: (newFeedObj, stateFeeds, feedId) =>
       replaceFeedById(newFeedObj, stateFeeds, feedId),
     render: feed => renderUpdatedFeed(feed),
+    getInfoNode: () => document.createElement('div'),
   },
 ];
 
@@ -51,7 +52,7 @@ const updateAppFeed = (feedObj) => {
   const { url, state } = feedObj;
   const feedProp = _.find(feedProperties, prop => prop.state === state);
   const alertNode = document.getElementById('feed-url-alerts');
-  const infoNode = getAlertInfoNode(`Fetching '${url}'`);
+  const infoNode = feedProp.getInfoNode(`Fetching '${url}'`);
   alertNode.appendChild(infoNode);
   axios.get(url)
     .then((response) => {
@@ -130,34 +131,12 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const url = feedInput.value.trim().toLowerCase();
-    // state.formUrlState = { condition: 'valid' };
     appState.submittedUrls.add(url);
     feedInput.value = '';
     if (appState.urlState.condition !== 'valid') {
       return;
     }
     updateAppFeed({ url, state: 'new' });
-    // state.feeds.add(url);
-  //   const alertNode = document.getElementById('feed-url-alerts');
-  //   const infoNode = getAlertInfoNode(`Fetching '${url}'`);
-  //   alertNode.appendChild(infoNode);
-  //   axios.get(url)
-  //     .then((response) => {
-  //       infoNode.remove();
-  //       const dp = new DOMParser();
-  //       const feedXML = dp.parseFromString(response.data, 'application/xml');
-  //       const { error } = xmlUtils.validateRssXml(feedXML);
-  //       if (error) {
-  //         throw new Error(error);
-  //       }
-  //       const feedObj = xmlUtils.makeFeedObject(feedXML);
-  //       const feedsParent = document.getElementById('feeds-list');
-  //       appendFeed(feedsParent, feedObj);
-  //     })
-  //     .catch((error) => {
-  //       infoNode.remove();
-  //       alertNode.appendChild(getAlertErrorNode(`Failed on '${url}' with: ${error}`));
-  //     });
   });
   startFeedUpdater();
 });
