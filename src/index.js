@@ -1,16 +1,94 @@
 import 'bootstrap';
 import axios from 'axios';
-import { isURL, isFloat } from 'validator';
-import appendFeed from './feedItem';
+import _ from 'lodash';
+import { isURL } from 'validator';
+import { appendFeed, updateFeed } from './feedItem';
+import * as xmlUtils from './xmlUtils';
+import { replaceFeedById, updateFeedItems, appendNewFeed } from './stateUtils';
 import { getAlertErrorNode, getAlertInfoNode } from './alertNode';
 
-const state = {
-  urlState: { condition: 'invalid', message: 'empty url' },
-  feeds: new Set(),
+
+const appState = {
+  formUrlState: { condition: 'invalid', message: 'empty url' },
+  timeoutId: '',
+  updateTimeout: 5000,
+  submittedUrls: new Set(),
+  validFeeds: [],
 };
 
+const renderNewFeed = (feed) => {
+  const feedsParent = document.getElementById('feeds-list');
+  // const renderedItems = feed.items.map(item => ({ ...item, state: 'rendered' }));
+  appendFeed(feedsParent, feed);
+};
+
+const renderUpdatedFeed = (feed) => {
+  const feedsParent = document.getElementById('feeds-list');
+  const newItems = feed.items.filter(item => item.state === 'new')
+    .map(item => ({ ...item, state: 'rendered' }));
+  updateFeed(feedsParent, { ...feed, items: newItems });
+};
+
+const feedProperties = [
+  {
+    state: 'new',
+    parser: feedXml => xmlUtils.makeNewFeedObject(feedXml),
+    feedUpdater: _.identity,
+    stateUpdater: (newFeedObj, stateFeeds) => appendNewFeed(newFeedObj, stateFeeds),
+    render: feed => renderNewFeed(feed),
+  },
+  {
+    state: 'rendered',
+    parser: feedXml => xmlUtils.makeFeedObject(feedXml),
+    feedUpdater: (newFeed, oldFeed) => updateFeedItems(newFeed, oldFeed),
+    stateUpdater: (newFeedObj, stateFeeds, feedId) =>
+      replaceFeedById(newFeedObj, stateFeeds, feedId),
+    render: feed => renderUpdatedFeed(feed),
+  },
+];
+
+const updateAppFeed = (feedObj) => {
+  const { url, state } = feedObj;
+  const feedProp = _.find(feedProperties, prop => prop.state === state);
+  const alertNode = document.getElementById('feed-url-alerts');
+  const infoNode = getAlertInfoNode(`Fetching '${url}'`);
+  alertNode.appendChild(infoNode);
+  axios.get(url)
+    .then((response) => {
+      infoNode.remove();
+      const dp = new DOMParser();
+      const feedXML = dp.parseFromString(response.data, 'application/xml');
+      const { error } = xmlUtils.validateRssXml(feedXML);
+      if (error) {
+        throw new Error(error);
+      }
+      const parsedFeed = feedProp.parser(feedXML, feedObj);
+      const updatedFeed = feedProp.feedUpdater(parsedFeed, feedObj);
+      feedProp.render(updatedFeed);
+      const renderedFeed = { ...updatedFeed, url, state: 'rendered' };
+      const renderedItems = renderedFeed.items.map(item => ({ ...item, state: 'rendered' }));
+      appState.validFeeds.push({ ...renderedFeed, items: renderedItems });
+    })
+    .catch((error) => {
+      infoNode.remove();
+      alertNode.appendChild(getAlertErrorNode(`Failed on '${url}' with: ${error}`));
+    });
+};
+
+const startFeedUpdater = () => {
+  const feeds = appState.validFeeds.slice();
+  appState.validFeeds = [];
+  while (feeds.length > 0) {
+    const feed = feeds.pop();
+    updateAppFeed(feed);
+  }
+  const newTimeoutId = setTimeout(startFeedUpdater, appState.updateTimeout);
+  appState.timeoutId = newTimeoutId;
+};
+
+
 const toggleInputState = (input) => {
-  const { condition, message } = state.urlState;
+  const { condition, message } = appState.urlState;
   if (condition === 'valid') {
     input.classList.remove('is-invalid');
     input.classList.add('is-valid');
@@ -22,92 +100,64 @@ const toggleInputState = (input) => {
   }
 };
 
-const getNodeTagValue = (node, tag) => {
-  const n = node.getElementsByTagName(tag)[0].childNodes;
-  return n.length === 0 ? '' : n[0].nodeValue;
-};
-
-const getNodeLink = node => getNodeTagValue(node, 'link');
-const getNodeTitle = node => getNodeTagValue(node, 'title');
-const getNodeDesc = node => getNodeTagValue(node, 'description');
-const getParserError = node => getNodeTagValue(node, 'parsererror');
-
-const validateRssXml = (xml) => {
-  const errorNode = xml.getElementsByTagName('parsererror')[0];
-  if (errorNode) {
-    return { error: getParserError(xml) };
-  }
-  const rssNode = xml.getElementsByTagName('rss')[0];
-  if (!rssNode) {
-    return { error: 'Not a rss feed' };
-  }
-  const rssVersion = rssNode.getAttribute('version');
-  if (!isFloat(rssVersion, { min: 0.90, max: 2.01 })) {
-    return { error: `bad RSS version ${rssVersion}` };
-  }
-  return {};
-};
-
-const makeFeedObject = (xml) => {
-  const feedItems = [...xml.getElementsByTagName('item')];
-  return {
-    title: getNodeTitle(xml),
-    description: getNodeDesc(xml),
-    items: feedItems.map(item => ({
-      title: getNodeTitle(item),
-      link: getNodeLink(item),
-      description: getNodeDesc(item),
-    })),
-  };
-};
-
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('feed-add-form');
   const feedInput = document.getElementById('feed-url');
   feedInput.addEventListener('input', (e) => {
     const { value } = e.target;
     const normalizedUrl = value.trim().toLowerCase();
-    if (!isURL(normalizedUrl, { require_protocol: true })) {
-      state.urlState = { condition: 'invalid', message: 'Invalid Feed URL' };
+    if (!isURL(normalizedUrl)) {
+      appState.urlState = { condition: 'invalid', message: 'Invalid Feed URL' };
       toggleInputState(feedInput);
       return;
     }
-    if (state.feeds.has(normalizedUrl)) {
-      state.urlState = { condition: 'invalid', message: 'Feed URL already exists' };
+    if (appState.submittedUrls.has(normalizedUrl)) {
+      appState.urlState = { condition: 'invalid', message: 'Feed URL already exists' };
       toggleInputState(feedInput);
       return;
     }
-    state.urlState = { condition: 'valid' };
+    appState.urlState = { condition: 'valid' };
     toggleInputState(feedInput);
+  });
+  const timeoutTimer = document.getElementById('updateTimeout');
+  timeoutTimer.addEventListener('change', (e) => {
+    clearTimeout(appState.timeoutId);
+    appState.updateTimeout = e.target.value * 1000;
+    const newTimeoutId = setTimeout(startFeedUpdater, appState.updateTimeout);
+    appState.timeoutId = newTimeoutId;
   });
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const url = feedInput.value;
+    const url = feedInput.value.trim().toLowerCase();
+    // state.formUrlState = { condition: 'valid' };
+    appState.submittedUrls.add(url);
     feedInput.value = '';
-    if (state.urlState.condition !== 'valid') {
+    if (appState.urlState.condition !== 'valid') {
       return;
     }
-    state.feeds.add(url);
-    const alertNode = document.getElementById('feed-url-alerts');
-    const infoNode = getAlertInfoNode(`Fetching '${url}'`);
-    alertNode.appendChild(infoNode);
-    axios.get(url)
-      .then((response) => {
-        infoNode.remove();
-        const dp = new DOMParser();
-        const feedXML = dp.parseFromString(response.data, 'application/xml');
-        const { error } = validateRssXml(feedXML);
-        if (error) {
-          throw new Error(error);
-        }
-        const feedObj = makeFeedObject(feedXML);
-        const feedsParent = document.getElementById('feeds-list');
-        appendFeed(feedsParent, feedObj);
-      })
-      .catch((error) => {
-        infoNode.remove();
-        alertNode.appendChild(getAlertErrorNode(`Failed on '${url}' with: ${error}`));
-      });
+    updateAppFeed({ url, state: 'new' });
+    // state.feeds.add(url);
+  //   const alertNode = document.getElementById('feed-url-alerts');
+  //   const infoNode = getAlertInfoNode(`Fetching '${url}'`);
+  //   alertNode.appendChild(infoNode);
+  //   axios.get(url)
+  //     .then((response) => {
+  //       infoNode.remove();
+  //       const dp = new DOMParser();
+  //       const feedXML = dp.parseFromString(response.data, 'application/xml');
+  //       const { error } = xmlUtils.validateRssXml(feedXML);
+  //       if (error) {
+  //         throw new Error(error);
+  //       }
+  //       const feedObj = xmlUtils.makeFeedObject(feedXML);
+  //       const feedsParent = document.getElementById('feeds-list');
+  //       appendFeed(feedsParent, feedObj);
+  //     })
+  //     .catch((error) => {
+  //       infoNode.remove();
+  //       alertNode.appendChild(getAlertErrorNode(`Failed on '${url}' with: ${error}`));
+  //     });
   });
+  startFeedUpdater();
 });

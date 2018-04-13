@@ -1,4 +1,4 @@
-const maxId = 1e5;
+// const maxId = 1e5;
 
 const makeFeedItemNode = (itemObj, targetId) => {
   const elem = document.createElement('li');
@@ -16,7 +16,8 @@ const makeFeedItemModal = (itemObj, targetId) => {
   modalDiv.innerHTML = `<div class="modal fade" id="${targetId}" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header font-weight-bold"">
+          ${itemObj.title}
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -33,28 +34,42 @@ const makeFeedItemModal = (itemObj, targetId) => {
   return modalDiv;
 };
 
-export default (parent, feedObj) => {
+const renderItems = (parent, itemsNode, items) => {
+  const modalNode = parent.querySelector('#feed-modals');
+  items.forEach((item) => {
+    // const elemId = `target${Math.floor(Math.random() * maxId)}"`;
+    const elemId = item.itemId;
+    const elem = makeFeedItemNode(item, elemId);
+    if (item.description.length > 0) {
+      const elemModal = makeFeedItemModal(item, elemId);
+      modalNode.appendChild(elemModal);
+    }
+    itemsNode.appendChild(elem);
+  });
+};
+
+export const appendFeed = (parent, feedObj) => {
+  const { feedId, items } = feedObj;
   const feedDiv = document.createElement('div');
   feedDiv.classList.add('card');
   feedDiv.innerHTML = `
   <h5 class="card-header text-white bg-secondary"></h5>
   <div class="card-body">
     <h5 class="card-title bg-light"></h5>
-    <ul class="list-group"></ul>
+    <ul id="${feedId}" class="list-group"></ul>
   </div>`;
   const feedTitleNode = feedDiv.querySelector('.card-header');
-  const feedDescNode = feedDiv.querySelector('.card-title');
-  const feedItemsNode = feedDiv.querySelector('.list-group');
   feedTitleNode.textContent = feedObj.title;
+  const feedDescNode = feedDiv.querySelector('.card-title');
   feedDescNode.textContent = feedObj.description;
-  feedObj.items.forEach((item) => {
-    const elemId = `target${Math.floor(Math.random() * maxId)}"`;
-    const elem = makeFeedItemNode(item, elemId);
-    if (item.description.length > 0) {
-      const elemModal = makeFeedItemModal(item, elemId);
-      parent.appendChild(elemModal);
-    }
-    feedItemsNode.appendChild(elem);
-  });
+  const feedItemsNode = feedDiv.querySelector('.list-group');
+  renderItems(parent, feedItemsNode, items);
   parent.appendChild(feedDiv);
+};
+
+export const updateFeed = (parent, feedObj) => {
+  const { feedId, items } = feedObj;
+  const id = `#${feedId}`;
+  const itemsNode = parent.querySelector(id);
+  renderItems(parent, itemsNode, items);
 };
