@@ -8,13 +8,16 @@ build:
 	rm -rf dist
 	npm run build
 
-publish: webpack
+publish: webpack-dev
 	surge ./dist --domain eem-hexlet-rssreader.surge.sh	
 
 webpack:
 	rm -rf ./dist
-	npm run webpack
-	
+	npm run webpack -- --mode production
+
+webpack-dev:
+	npm run webpack -- --mode development
+
 test:
 	npm test
 
