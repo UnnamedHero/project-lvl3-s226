@@ -13,12 +13,25 @@
               <label for="feed-url">RSS feed URL</label>              
               <input type="text" class="form-control" id="feed-url" placeholder="feed URL" required>
               <div class="invalid-feedback"></div>
-            </div>
+            </div>            
             <button type="submit" class="btn btn-primary">Submit</button>
+            <div>
+              <label for="updateTimeout">Refresh timeout in seconds</label>            
+              <select class="selectpicker" id="updateTimeout">
+                <option>5</option>
+                <option>10</option>
+                <option>15</option>
+                <option>30</option>
+                <option>60</option>
+              </select>
+          </div>
         </form>
+
       </div>
-      <div id="feed-url-alerts"></div> 
-      <div id="feeds-list">        
+      <div id="feed-url-alerts">
+      </div>
+      <div id="feeds-list">
+        <div id='feed-modals'></div>
       </div>
     </body>
 </html>
