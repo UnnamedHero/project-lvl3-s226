@@ -1,8 +1,6 @@
-// const maxId = 1e5;
-
 const makeFeedItemNode = (itemObj, targetId) => {
   const elem = document.createElement('li');
-  elem.classList.add('list-group-item', 'd-flex');
+  elem.classList.add('list-group-item', 'd-flex', 'w3-animate-opacity');
   const button = itemObj.description.length > 0 ?
     `<button type="button" class="btn btn-info badge badge-primary badge-pill ml-auto p-2" data-toggle="modal" data-target="#${targetId}"> ? </button>` :
     '';
@@ -37,7 +35,6 @@ const makeFeedItemModal = (itemObj, targetId) => {
 const renderItems = (parent, itemsNode, items) => {
   const modalNode = parent.querySelector('#feed-modals');
   items.forEach((item) => {
-    // const elemId = `target${Math.floor(Math.random() * maxId)}"`;
     const elemId = item.itemId;
     const elem = makeFeedItemNode(item, elemId);
     if (item.description.length > 0) {
