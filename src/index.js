@@ -10,10 +10,8 @@ import { getAlertErrorNode, getAlertInfoNode } from './alertNode';
 
 const appState = {
   formUrlState: { condition: 'invalid', message: 'empty url' },
-  timeoutId: '',
   updateTimeout: 5000,
   submittedUrls: new Set(),
-  validFeeds: [],
 };
 
 const renderNewFeed = (feed) => {
@@ -68,7 +66,7 @@ const updateAppFeed = (feedObj) => {
       feedProp.render(updatedFeed);
       const renderedFeed = { ...updatedFeed, url, state: 'rendered' };
       const renderedItems = renderedFeed.items.map(item => ({ ...item, state: 'rendered' }));
-      appState.validFeeds.push({ ...renderedFeed, items: renderedItems });
+      setTimeout(updateAppFeed, appState.updateTimeout, { ...renderedFeed, items: renderedItems });
     })
     .catch((error) => {
       infoNode.remove();
@@ -122,10 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const timeoutTimer = document.getElementById('updateTimeout');
   timeoutTimer.addEventListener('change', (e) => {
-    clearTimeout(appState.timeoutId);
     appState.updateTimeout = e.target.value * 1000;
-    const newTimeoutId = setTimeout(startFeedUpdater, appState.updateTimeout);
-    appState.timeoutId = newTimeoutId;
   });
 
   form.addEventListener('submit', (e) => {
@@ -138,5 +133,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateAppFeed({ url, state: 'new' });
   });
-  startFeedUpdater();
 });
