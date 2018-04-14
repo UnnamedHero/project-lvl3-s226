@@ -1,6 +1,6 @@
 const makeFeedItemNode = (itemObj, targetId) => {
   const elem = document.createElement('li');
-  elem.classList.add('list-group-item', 'd-flex', 'w3-animate-opacity');
+  elem.classList.add('list-group-item', 'd-flex', 'w3-animate-right');
   const button = itemObj.description.length > 0 ?
     `<button type="button" class="btn btn-info badge badge-primary badge-pill ml-auto p-2" data-toggle="modal" data-target="#${targetId}"> ? </button>` :
     '';
