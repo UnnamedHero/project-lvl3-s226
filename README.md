@@ -5,3 +5,7 @@
 
 
 Try it here: [http://eem-hexlet-rssreader.surge.sh](http://eem-hexlet-rssreader.surge.sh)
+
+Цель: работа с DOM на помощью JS, применение технологий webpack, bootstrap, асинхронные запросы.
+
+Описание: Создать простейший RSS-ридер с автоматическим обновлением.
